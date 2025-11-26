@@ -10,110 +10,155 @@ class Bootloader extends Phaser.Scene {
 
     this.load.image("console", "assets/console.png");
     this.load.image("gato", "assets/gato.png");
-    this.load.image("pez1", "assets/pez1.png");
-    this.load.image("pez2", "assets/pez2.png");
-    // Carga de sonido
-    this.load.audio("fondo", "assets/sonido_burbujas.mp3");
-  
-    
+
+
+
+    // Pez normal (5 frames)
+    this.load.image("pez1", "assets/pez 1.png");
+    this.load.image("pez2", "assets/pez 2.png");
+    this.load.image("pez3", "assets/pez 3.png");
+    this.load.image("pez4", "assets/pez 4.png");
+    this.load.image("pez5", "assets/pez 5.png");
+
+    // Pez brillante (3 frames)
+    this.load.image("pezb1", "assets/pezb1.png");
+    this.load.image("pezb2", "assets/pezb2.png");
+    this.load.image("pezb3", "assets/pezb3.png");
+
     }
 
 
-    create() {
-    const { width, height } = this.sys.game.config;
     
+create() {
+    const { width, height } = this.sys.game.config;
 
-    // Fondo de la consola
-    const consola = this.add.image(width / 2, height / 2, "console").setOrigin(0.5);
-    consola.setScale(1.4); // 🔹 Puedes cambiar este número para agrandar la consola
+    // 🟦 Animación del pez normal
+    this.anims.create({
+        key: "animPezNormal",
+        frames: [
+            { key: "pez1" },
+            { key: "pez2" },
+            { key: "pez3" },
+            { key: "pez4" },
+            { key: "pez5" },
+        ],
+        frameRate: 6,
+        repeat: -1
+    });
 
-    // Coordenadas del área de la "pantalla azul" (ajústalas según tu imagen)
+    // ✨ Animación del pez brillante
+    this.anims.create({
+        key: "animPezBrillante",
+        frames: [
+            { key: "pezb1" },
+            { key: "pezb2" },
+            { key: "pezb3" },
+        ],
+        frameRate: 6,
+        repeat: -1
+    });
+
+    // 🎮 Consola principal
+    const consola = this.add.image(width / 2, height / 2, "console")
+        .setOrigin(0.5)
+        .setScale(1.8)   // 🔹 Tamaño corregido
+        .setDepth(2);    // 🔹 Debajo de todo lo demás
+
+    // 🐱 Gato decorativo
+    this.add.image(width * 0.40, height * 0.42, "gato")
+        .setScale(0.7)
+        .setDepth(2);    // Sobre la consola
+
+    // 📺 Área de la pantalla azul
     const screenX = width * 0.35;
-    const screenY = height * 0.1;
+    const screenY = height * 0.10;
     const screenWidth = width * 0.26;
     const screenHeight = height * 0.35;
 
-    
+    // 🐟 Crear peces
+    this.fishes = [];
+    this.gameOver = false;
 
-    // Dibujar área invisible (ayuda para depurar)
-    // const debug = this.add.graphics();
-    // debug.lineStyle(2, 0xff0000);
-    // debug.strokeRect(screenX, screenY, screenWidth, screenHeight);
-    // Añadir gato (decorativo)
-    this.add.image(width * 0.40, height * 0.42, "gato").setScale(0.7);
+    for (let i = 0; i < 5; i++) {
 
-   // Crear grupo de peces
-  this.fishes = [];
-  this.gameOver = false;
+        // SOLO el pez 0 es normal (pez1 animPezNormal)
+        const isNormal = (i == 0);
 
-  // 🔹 Crear 1 pez1 y 4 pez2 usando la misma estructura
-  for (let i = 0; i < 5; i++) {
-    const fishKey = i === 0 ? "pez1" : "pez2"; // solo el primero es pez1
+        const fishKey = isNormal ? "pez1" : "pezb1";
+        const animKey = isNormal ? "animPezNormal" : "animPezBrillante";
 
-    const fish = this.add.sprite(
-      Phaser.Math.Between(screenX + 50, screenX + screenWidth - 50),
-      Phaser.Math.Between(screenY + 50, screenY + screenHeight - 50),
-      fishKey
-    );
+        const fish = this.add.sprite(
+            Phaser.Math.Between(screenX + 50, screenX + screenWidth - 50),
+            Phaser.Math.Between(screenY + 50, screenY + screenHeight - 50),
+            fishKey
+        )
+            .setDepth(3)  // Sobre consola y gato
+            .setScale(isNormal ? 0.1 : 0.30);
 
-    fish.setScale(fishKey === "pez1" ? 0.9 : 0.8);
-    fish.speedX = Phaser.Math.Between(80, 120) * (Math.random() < 0.5 ? 1 : -1);
-    fish.speedY = Phaser.Math.Between(40, 70) * (Math.random() < 0.5 ? 1 : -1);
-    fish.setFlipX(fish.speedX < 0);
+        fish.setFlipX(false); // 🔹 Corregir orientación inicial
 
-    // Hacer los peces interactivos
-    fish.setInteractive();
+        // iniciar animación
+        fish.play(animKey);
+        fish.setScale(fishKey === "pezb1" ? 0.1 : 0.2); 
 
-    // 🔹 Si el jugador hace clic en pez1 → gana
-    fish.on("pointerdown", () => {
-      if (this.gameOver) return; // evita hacer clic varias veces
-      this.gameOver = true;
+        // Velocidad aleatoria
+        fish.speedX = Phaser.Math.Between(60, 120) * (Math.random() < 0.5 ? 1 : -1);
+        fish.speedY = Phaser.Math.Between(40, 70) * (Math.random() < 0.5 ? 1 : -1);
 
-      if (fishKey === "pez1") {
-        this.add.text(width / 2, height * 0.10, "🎉 ¡Atrapaste el pez correcto! 🎉", {
-          fontSize: "28px",
-          fill: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 5
-        }).setOrigin(0.5);
-      } else {
-        this.add.text(width / 2, height * 0.10, " Ese no era el pez correcto", {
-          fontSize: "28px",
-          fill: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 5
-        }).setOrigin(0.5);
-      }
+        fish.setInteractive();
 
-      // Detener movimiento de todos los peces
-      this.fishes.forEach(f => {
-        f.speedX = 0;
-        f.speedY = 0;
-      });
-    });
+        // Evento de clic
+        fish.on("pointerdown", () => {
+            if (this.gameOver) return;
 
-    this.fishes.push(fish);
-  }
-   // Botón de reinicio
-  const restartBtn = this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 40, "°", {
-    fontSize: "28px",
-    fill: "#00ffff",
-    backgroundColor: "#003366",
-    padding: { x: 10, y: 10 }
-  })
-    .setOrigin(0.40 )
-    .setInteractive({ useHandCursor: true })
-    .on("pointerdown", () => {
-      this.scene.restart(); // Reinicia la escena
+            this.gameOver = true;
+
+            if (isNormal) {
+                this.add.text(width / 2, height * 0.10, "🎉 ¡Atrapaste el pez correcto! 🎉", {
+                    fontSize: "28px",
+                    fill: "#ffffff",
+                    stroke: "#000",
+                    strokeThickness: 5
+                }).setOrigin(0.5).setDepth(10);
+            } else {
+                this.add.text(width / 2, height * 0.10, "Ese no era el pez correcto", {
+                    fontSize: "28px",
+                    fill: "#ffffff",
+                    stroke: "#000",
+                    strokeThickness: 5
+                }).setOrigin(0.5).setDepth(10);
+            }
+
+            // Detener todos los peces
+            this.fishes.forEach(f => {
+                f.speedX = 0;
+                f.speedY = 0;
+            });
+        });
+
+        this.fishes.push(fish);
+    }
+
+    // 🔄 Botón de reinicio
+    const restartBtn = this.add.text(width / 2, height / 2 + 80, "↻ Reiniciar", {
+        fontSize: "28px",
+        fill: "#00ffff",
+        backgroundColor: "#003366",
+        padding: { x: 15, y: 10 }
     })
-    .on("pointerover", () => restartBtn.setStyle({ fill: "#ffff00" }))
-    .on("pointerout", () => restartBtn.setStyle({ fill: "#00ffff" }));
+        .setOrigin(0.5)
+        .setDepth(10)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", () => this.scene.restart())
+        .on("pointerover", () => restartBtn.setStyle({ fill: "#ffff00" }))
+        .on("pointerout", () => restartBtn.setStyle({ fill: "#00ffff" }));
 
-
-
-  // Guardar área azul
-  this.gameZone = { x: screenX, y: screenY, width: screenWidth, height: screenHeight };
+    // Guardar la zona azul
+    this.gameZone = { x: screenX, y: screenY, width: screenWidth, height: screenHeight };
 }
+
+
+
      update(time, delta) {
     const zone = this.gameZone;
 

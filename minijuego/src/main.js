@@ -8,8 +8,8 @@ const config = {
 
     scale: { 
     parent: "contenedor", 
-    width: 1500, 
-    height: 700, 
+    width: 1900, 
+    height: 950, 
     
 },
     scene: [Bootloader]
